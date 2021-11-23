@@ -1,19 +1,19 @@
 const DOM = {
-    select:document.getElementById("categorias-inicial"),
-    select2:document.getElementById("categorias-modificar"),
-    divContainer:document.getElementById("container"),
-    anadir:document.getElementById("anadir"),
-    link:document.getElementById("link"),
-    titulo:document.getElementById("titulo"),
-    modificar:document.getElementById("modificar"),
-    borrar:document.getElementById("borrar"),
-    guardar:document.getElementById("guardar")
+    select: document.getElementById("categorias-inicial"),
+    select2: document.getElementById("categorias-modificar"),
+    divContainer: document.getElementById("container"),
+    anadir: document.getElementById("anadir"),
+    link: document.getElementById("link"),
+    titulo: document.getElementById("titulo"),
+    modificar: document.getElementById("modificar"),
+    borrar: document.getElementById("borrar"),
+    guardar: document.getElementById("guardar"),
+    option: document.getElementById("categorias-modificar").firstElementChild
 };
-
 var categorias;
 var catalogo;
 // Añade 2 categorías más de temas que  quieras
-var strCategorias='[{"nombre":"Jamones"},{"nombre":"Quesos"},{"nombre":"Turrones"},{"nombre":"Cereales"},{"nombre":"Vinos"}]';
+var strCategorias = '[{"nombre":"Jamones"},{"nombre":"Quesos"},{"nombre":"Turrones"},{"nombre":"Cereales"},{"nombre":"Vinos"}]';
 // Añade 3 imágenes a cada categorías para tenerlas ya desde el comienzo
 var strCatalogo = '[{"id":1,"src":"https://cdn.metro-group.com/es/es_pim_74739001001_01.png?w=400&h=400&mode=pad","titulo":"Sanches Alcaraz ETG Jamón serrano reserva","categoria":"Jamones"},\
 {"id":2,"src":"https://cdn.metro-group.com/es/es_pim_23262001001_01.png?w=400&h=400&mode=pad","titulo":"La era Jamón serrano reserva ETG 7,2/7,5kg","categoria":"Jamones"},\
@@ -32,7 +32,8 @@ var strCatalogo = '[{"id":1,"src":"https://cdn.metro-group.com/es/es_pim_7473900
 {"id":15,"src":"https://www.tusvinosonline.com/media/rioja-vega-crianza1.png","titulo": "Rioja Vega Crianza Vino tinto", "categoria":"Vinos"}]';
 
 //-----------------------------AddEventListener----------------------------------
-DOM.select.addEventListener('change', () => {mostrarImagenes(DOM.select.value)});
+DOM.select.addEventListener('change', () => { mostrarImagenes(DOM.select.value) });
+DOM.select2.addEventListener('change', cambiarCategoria);
 DOM.divContainer.addEventListener('click', seleccionar);
 DOM.anadir.addEventListener('click', anadirProducto);
 DOM.modificar.addEventListener('click', modificar);
@@ -40,40 +41,94 @@ DOM.borrar.addEventListener('click', borrar);
 DOM.guardar.addEventListener('click', guardar);
 //--------------------------------------------------------------------------------
 //---------------------------------funcion IIFE-----------------------------------
-(function(){
+(function () {
     // Obtenemos las categorias del localStorage ... y si no hay las cargamos del string JSON
     categorias = JSON.parse(localStorage.getItem("categorias"));
-    if (!categorias)
-        categorias=JSON.parse(strCategorias);
+    if (!categorias) {
+        categorias = JSON.parse(strCategorias);
+        localStorage.setItem("categorias", JSON.stringify([]));
+        guardarCategorias(categorias);
+    }
     // Obtenemos el catálogo del localStorage ... y si no hay lo cargamos del string JSON
     catalogo = JSON.parse(localStorage.getItem("catalogo"));
     if (!catalogo)
-        catalogo=JSON.parse(strCatalogo);
-
+        catalogo = JSON.parse(strCatalogo);
     //Metemos los options en el select estático del HTML
-    categorias.forEach(categoria => DOM.select.appendChild(crearNodo("option", categoria.nombre, [], [{name:"value", value:categoria.nombre}])));
-    categorias.forEach(categoria => DOM.select2.appendChild(crearNodo("option", categoria.nombre, [], [{name:"value", value:categoria.nombre}])));
+    categorias.forEach(categoria => DOM.select.appendChild(crearNodo("option", categoria.nombre, [], [{ name: "value", value: categoria.nombre }])));
+    categorias.forEach(categoria => DOM.select2.appendChild(crearNodo("option", categoria.nombre, [], [{ name: "value", value: categoria.nombre }])));
     mostrarImagenes(DOM.select.value);
 })();
 //--------------------------------------------------------------------------------
+function guardarCategorias(categorias) {  //Función para guardar las categorias en el localStorage
+    categorias.forEach(categoria => {
+        let categorias = JSON.parse(localStorage.getItem("categorias"));
+        categorias.push(categoria);
+        localStorage.setItem("categorias", JSON.stringify(categorias));
+    })
+}
 //-----------------------------Funciones CRUD productos---------------------------
-function borrar(){
-
+function borrar() {
+    if (document.getElementsByClassName("seleccionada").length == 1) {  //comprobamos que solo haya un objeto selecionado
+        let seleccionado = document.getElementsByClassName("seleccionada")[0];  //div selecionado
+        let proSeleccionado = catalogo.find(producto => producto.id == seleccionado.id)  //buscamos el producto con el mismo id del div selecionado
+        catalogo.splice(catalogo.indexOf(proSeleccionado), 1);  //borramos el producto, buscando su indice
+        //si está en el LS
+        mostrarImagenes(DOM.select.value);
+    }
+    else {
+        let seleccionados = document.getElementsByClassName("seleccionada");
+        seleccionados = [].slice.call(seleccionados);  //convertir el HTMLCollection en array 
+        seleccionados.forEach(seleccionado => {
+            let proSeleccionado = catalogo.find(producto => producto.id == seleccionado.id)  //buscamos el producto con el mismo id del div selecionado
+            catalogo.splice(catalogo.indexOf(proSeleccionado), 1);
+        })
+        mostrarImagenes(DOM.select.value);
+    }
 }
 
-function modificar(){
+function modificar() {
+    let seleccionado = document.getElementsByClassName("seleccionada")[0];  //div selecionado
+    let proSeleccionado = catalogo.find(producto => producto.id == seleccionado.id)  //buscamos el producto con el mismo id del div selecionado
     let link = DOM.link.value;
     let titulo = DOM.titulo.value;
-    if(!link) return;
-    if(!titulo) return;
+    if (!link) return;
+    if (!titulo) return;
+    let proNuevo = { "id": proSeleccionado.id, "src": link, "titulo": titulo, "categoria": DOM.select.value };
+    catalogo.splice(catalogo.indexOf(proSeleccionado), 1, proNuevo);  //reemplazamos el producto por el modificado, buscando su indice
+    DOM.link.value = "";
+    DOM.titulo.value = "";
+    //modificar LS
+    mostrarImagenes(DOM.select.value);
 }
 
-function anadirProducto(){
+function cambiarCategoria() {
+    if (document.getElementsByClassName("seleccionada").length == 1) {  //comprobamos que solo haya un objeto selecionado
+        let seleccionado = document.getElementsByClassName("seleccionada")[0];  //div selecionado
+        let proSeleccionado = catalogo.find(producto => producto.id == seleccionado.id)  //buscamos el producto con el mismo id del div selecionado
+        let proNuevo = { "id": proSeleccionado.id, "src": proSeleccionado.src, "titulo": proSeleccionado.titulo, "categoria": DOM.select2.value };
+        catalogo.splice(catalogo.indexOf(proSeleccionado), 1, proNuevo);  //reemplazamos el producto por el modificado, buscando su indice
+        mostrarImagenes(DOM.select.value);
+        DOM.select2.value = DOM.option.value;
+    }
+    else {
+        let seleccionados = document.getElementsByClassName("seleccionada");
+        seleccionados = [].slice.call(seleccionados);  //convertir el HTMLCollection en array 
+        seleccionados.forEach(seleccionado => {
+            let proSeleccionado = catalogo.find(producto => producto.id == seleccionado.id)  //buscamos el producto con el mismo id del div selecionado
+            let proNuevo = { "id": proSeleccionado.id, "src": proSeleccionado.src, "titulo": proSeleccionado.titulo, "categoria": DOM.select2.value };
+            catalogo.splice(catalogo.indexOf(proSeleccionado), 1, proNuevo);  //reemplazamos el producto por el modificado, buscando su indice;
+        })
+        DOM.select2.value = DOM.option.value
+        mostrarImagenes(DOM.select.value);
+    }
+}
+
+function anadirProducto() {
     let link = DOM.link.value;
     let titulo = DOM.titulo.value;
-    if(!link) return;
-    if(!titulo) return;
-    let producto = {"id": catalogo.length+1, "src": link, "titulo": titulo, "categoria": DOM.select.value};
+    if (!link) return;
+    if (!titulo) return;
+    let producto = { "id": catalogo.length + 1, "src": link, "titulo": titulo, "categoria": DOM.select.value };
     catalogo.push(producto);
     DOM.link.value = "";
     DOM.titulo.value = "";
@@ -83,55 +138,62 @@ function anadirProducto(){
 //------------------------------Delegación de eventos-----------------------------
 let seleccionada;
 
-function seleccionar(event){
+function seleccionar(event) {
     let target = event.target.closest('.tarjeta');
-    if(!target) return;
-    if(!DOM.divContainer.contains(target)) return;
+    if (!target) return;
+    if (!DOM.divContainer.contains(target)) return;
     destacar(target);
 }
 
-function destacar(divImagen){
-    if(seleccionada)
-        seleccionada.classList.remove('seleccionada');
-    seleccionada = divImagen;
-    seleccionada.classList.add('seleccionada');
-    DOM.modificar.disabled = false;
-    DOM.select2.disabled = false;
-    DOM.borrar.disabled = false;
-}   
+function destacar(divImagen) {
+    if (window.event.ctrlKey) {
+        seleccionada = divImagen;
+        seleccionada.classList.add('seleccionada');
+        DOM.modificar.disabled = true;
+    }
+    else {
+        if (seleccionada)
+            seleccionada.classList.remove('seleccionada');
+        seleccionada = divImagen;
+        seleccionada.classList.add('seleccionada');
+        DOM.modificar.disabled = false;
+        DOM.select2.disabled = false;
+        DOM.borrar.disabled = false;
+    }
+}
 //--------------------------------------------------------------------------------
 //----------------------------------Mostrar imagenes------------------------------
-function mostrarImagenes(categoria){
+function mostrarImagenes(categoria) {
     borrarNodo(DOM.divContainer);     //Borramos los nodos que haya en el divContainer para mostrar las nuevas imagenes
     let filtrado = catalogo.filter(producto => producto.categoria == categoria);
     filtrado.forEach(producto => {
-        let div = crearNodo("div", "", ["tarjeta"], []);
-        div.appendChild(crearNodo("img", "", [], [{name:"src", value:producto.src}]));
+        let div = crearNodo("div", "", ["tarjeta"], [{ name: "id", value: producto.id }]);
+        div.appendChild(crearNodo("img", "", [], [{ name: "src", value: producto.src }]));
         div.appendChild(crearNodo("div", producto.titulo, ["nompre-producto"], []));
         DOM.divContainer.appendChild(div);
     })
 }
 //--------------------------------------------------------------------------------
 //--------------------------------localStorage------------------------------------
-function guardar(){
-    if(localStorage.getItem("catalogo") == null)
+function guardar() {
+    if (localStorage.getItem("catalogo") == null)
         localStorage.setItem("catalogo", JSON.stringify([]));
     let productos = JSON.parse(localStorage.getItem("catalogo"));  //Sacamos localStorage
     catalogo.forEach(productoLocal => {   //para cada producto del LS comprobamos si ya está añadido
         let productoEncontrado = productos.find(producto => producto.id == productoLocal.id);   //Devuelve el producto si lo encuentra
-        if(productoEncontrado == undefined)  // si es undefined lo añadimos, ya que no ha sido encontrado
+        if (productoEncontrado == undefined)  // si es undefined lo añadimos, ya que no ha sido encontrado
             anadirLocalStorage(productoLocal);
     })
 }
 
-function anadirLocalStorage(producto){
-    let catalogo =JSON.parse(localStorage.getItem("catalogo"));
+function anadirLocalStorage(producto) {
+    let catalogo = JSON.parse(localStorage.getItem("catalogo"));
     catalogo.push(producto);
     localStorage.setItem("catalogo", JSON.stringify(catalogo));
 }
 
-function eliminarLocalStorage(recetaBorrar){
-    let recetas =JSON.parse(localStorage.getItem("recetas"));
+function eliminarLocalStorage(recetaBorrar) {
+    let recetas = JSON.parse(localStorage.getItem("recetas"));
     recetas.todo = recetas.todo.filter(receta => receta.nombre != recetaBorrar.nombre);
     localStorage.setItem("recetas", JSON.stringify(recetas));
 }
