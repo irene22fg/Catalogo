@@ -35,8 +35,12 @@ img{
     margin: 10px;
 }
 
+.tarjeta:hover{
+    border: solid rgb(255, 136, 136) 1px;
+}
+
 .seleccionada{
-    border: solid red 2px;
+    border: solid red 2px !important;
 }
 
 #inputs{
