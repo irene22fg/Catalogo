@@ -8,7 +8,10 @@ const DOM = {
     modificar: document.getElementById("modificar"),
     borrar: document.getElementById("borrar"),
     guardar: document.getElementById("guardar"),
-    option: document.getElementById("categorias-modificar").firstElementChild
+    option: document.getElementById("categorias-modificar").firstElementChild,
+    section2: document.getElementById("section2"),
+    section3: document.getElementById("section3"),
+    section4: document.getElementById("section4")
 };
 var categorias;
 var catalogo;
@@ -39,6 +42,9 @@ DOM.anadir.addEventListener('click', anadirProducto);
 DOM.modificar.addEventListener('click', modificar);
 DOM.borrar.addEventListener('click', borrar);
 DOM.guardar.addEventListener('click', guardar);
+DOM.section2.addEventListener('click', quitarSeleccion);  //Seguro que hay una manera más óptima de hacer esto
+DOM.section3.addEventListener('click', quitarSeleccion);
+DOM.section4.addEventListener('click', quitarSeleccion);
 //--------------------------------------------------------------------------------
 //---------------------------------funcion IIFE-----------------------------------
 (function () {
@@ -161,6 +167,13 @@ function destacar(divImagen) {
         DOM.borrar.disabled = false;
     }
 }
+
+function quitarSeleccion(){
+    let seleccionados = document.getElementsByClassName("seleccionada");
+        seleccionados = [].slice.call(seleccionados);
+    if (seleccionados)
+        seleccionados.forEach(seleccionado => seleccionado.classList.remove('seleccionada'));
+}
 //--------------------------------------------------------------------------------
 //----------------------------------Mostrar imagenes------------------------------
 function mostrarImagenes(categoria) {
@@ -192,11 +205,11 @@ function anadirLocalStorage(producto) {
     localStorage.setItem("catalogo", JSON.stringify(catalogo));
 }
 
-function eliminarLocalStorage(recetaBorrar) {
+/* function eliminarLocalStorage(recetaBorrar) {
     let recetas = JSON.parse(localStorage.getItem("recetas"));
     recetas.todo = recetas.todo.filter(receta => receta.nombre != recetaBorrar.nombre);
     localStorage.setItem("recetas", JSON.stringify(recetas));
-}
+} */
 //--------------------------------------------------------------------------------
 //------------------------------Crear y borrar nodos------------------------------
 function borrarNodo(container) {       //función BORRAR NODO
